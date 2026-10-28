@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="ru" data-theme="light"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#f6f5f2">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Голос</title>
+<style>
+:root{--bg:#f6f5f2;--fg:#1c1c1e;--muted:#8a8a8e;--card:#fff;--accent:#1c1c1e;--accent-fg:#fff;--line:#e6e4df}
+[data-theme=dark]{--bg:#0e0e10;--fg:#ececee;--muted:#7c7c85;--card:#17171a;--accent:#ececee;--accent-fg:#0e0e10;--line:#26262b}
+[data-theme=sand]{--bg:#efe6d8;--fg:#3b2f22;--muted:#9a8a76;--card:#f7f0e4;--accent:#b4653a;--accent-fg:#fff;--line:#e0d3bf}
+[data-theme=mint]{--bg:#e8f1ec;--fg:#1f3a2e;--muted:#7f9a8c;--card:#f3f9f5;--accent:#2f8f64;--accent-fg:#fff;--line:#d2e4da}
+[data-theme=ocean]{--bg:#0b1b2b;--fg:#dbe9f5;--muted:#6f8aa5;--card:#12283d;--accent:#4aa3ff;--accent-fg:#06121e;--line:#1c3a57}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;min-height:100%}
+body{background:var(--bg);color:var(--fg);font:17px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,sans-serif;transition:background .3s,color .3s}
+main{max-width:560px;margin:0 auto;min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;padding:20px 20px calc(20px + env(safe-area-inset-bottom))}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px}
+h1{font-size:15px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;margin:0;color:var(--muted)}
+.right{display:flex;align-items:center;gap:14px}
+#themes{display:flex;gap:10px}
+.sw-theme{width:20px;height:20px;border-radius:50%;border:1.5px solid var(--line);padding:0;cursor:pointer;transition:transform .15s,box-shadow .15s}
+.sw-theme[aria-pressed=true]{box-shadow:0 0 0 2px var(--bg),0 0 0 3.5px var(--fg);transform:scale(1.05)}
+button{font:inherit;color:inherit;cursor:pointer}
+.ghost{background:none;border:0;color:var(--muted);padding:6px 2px;font-size:14px}
+.ghost:hover{color:var(--fg)}
+#settings{margin-top:20px;padding:16px;background:var(--card);border:1px solid var(--line);border-radius:16px}
+#settings[hidden]{display:none}
+#settings label{font-size:13px;color:var(--muted)}
+#key{width:100%;margin:6px 0 14px;padding:12px 14px;font:inherit;font-size:16px;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:12px;outline:0}
+#key:focus{border-color:var(--accent)}
+.row{display:flex;align-items:center;justify-content:space-between;font-size:15px}
+.tg{width:46px;height:28px;border-radius:14px;border:0;background:var(--line);position:relative;transition:background .2s;padding:0}
+.tg::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:var(--card);box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .2s}
+.tg[aria-checked=true]{background:var(--accent)}
+.tg[aria-checked=true]::after{transform:translateX(18px);background:var(--accent-fg)}
+.hint{font-size:13px;color:var(--muted);margin:14px 0 0}
+.hint a{color:inherit}
+#stage{flex:1;display:flex;flex-direction:column;justify-content:center;padding:28px 0;min-height:160px}
+#ans{font-size:clamp(22px,5.4vw,28px);line-height:1.35;font-weight:500;letter-spacing:-.01em;white-space:pre-wrap;word-wrap:break-word}
+#ans:empty::before{content:"Напишите — и я отвечу вслух";color:var(--muted);font-weight:400}
+#st{min-height:20px;margin-top:12px;font-size:13px;color:var(--muted)}
+.composer{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:14px 14px 10px;box-shadow:0 8px 30px rgba(0,0,0,.05)}
+#txt{width:100%;border:0;outline:0;resize:none;background:none;color:var(--fg);font:inherit;font-size:18px;line-height:1.4;max-height:160px;min-height:52px}
+#txt::placeholder{color:var(--muted)}
+.actions{display:flex;justify-content:space-between;align-items:center;margin-top:6px}
+#go{background:var(--accent);color:var(--accent-fg);border:0;border-radius:999px;padding:10px 22px;font-weight:600;font-size:15px;transition:transform .1s,opacity .2s}
+#go:active{transform:scale(.97)}
+#go:disabled{opacity:.5}
+</style></head><body>
+<main>
+  <header>
+    <h1>Голос</h1>
+    <div class="right">
+      <div id="themes" role="group" aria-label="Тема"></div>
+      <button id="cog" class="ghost">Настройки</button>
+    </div>
+  </header>
+
+  <section id="settings" hidden>
+    <label for="key">Gemini API key — необязательно, даёт лучший голос</label>
+    <input id="key" type="password" placeholder="Вставьте свой ключ" autocomplete="off">
+    <div id="ks" class="hint" style="margin:-8px 0 14px"></div>
+    <div class="row"><span>Отвечать с помощью ИИ</span><button id="aiSw" class="tg" role="switch" aria-checked="true" aria-label="Отвечать с помощью ИИ"></button></div>
+    <p class="hint">Без ключа ответы идут через бесплатный сервис Pollinations, а читает голос браузера. С ключом Gemini ответ и голос заметно лучше. Ключ хранится только в этом браузере.</p>
+  </section>
+
+  <div id="stage">
+    <div id="ans"></div>
+    <div id="st"></div>
+  </div>
+
+  <div class="composer">
+    <textarea id="txt" rows="2" placeholder="Введите вопрос или фразу…"></textarea>
+    <div class="actions">
+      <button id="stop" class="ghost">Стоп</button>
+      <button id="go">Отправить</button>
+    </div>
+  </div>
+</main>
+
+<script>
+const TTS_MODEL="gemini-3.1-flash-tts-preview", VOICE="Kore";
+const TEXT_MODEL="gemini-flash-latest";
+const API="https://generativelanguage.googleapis.com/v1beta/models/";
+const SYSTEM="Ты отвечаешь вслух, как живой человек в разговоре: коротко (1–3 предложения), чётко и по делу, простыми словами, без списков, markdown и эмодзи. Отвечай на языке собеседника.";
+const THEMES={light:["#f6f5f2","#1c1c1e","Светлая"],dark:["#0e0e10","#ececee","Тёмная"],sand:["#efe6d8","#b4653a","Песок"],mint:["#e8f1ec","#2f8f64","Мята"],ocean:["#0b1b2b","#4aa3ff","Океан"]};
+const $=id=>document.getElementById(id), cache=new Map();
+const ls={get:k=>{try{return localStorage.getItem(k)}catch(e){return null}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}}};
+let ctx,cur,hist=[],useAI=ls.get("ai")!=="0";
+
+/* темы */
+function setTheme(n){
+  document.documentElement.dataset.theme=n; ls.set("theme",n);
+  document.querySelector('meta[name=theme-color]').content=THEMES[n][0];
+  document.querySelectorAll(".sw-theme").forEach(b=>b.setAttribute("aria-pressed",b.dataset.t===n));
+}
+for(const n in THEMES){
+  const b=document.createElement("button");
+  b.className="sw-theme"; b.dataset.t=n; b.title=THEMES[n][2]; b.setAttribute("aria-label",THEMES[n][2]);
+  b.style.background=`linear-gradient(135deg,${THEMES[n][0]} 50%,${THEMES[n][1]} 50%)`;
+  b.onclick=()=>setTheme(n); $("themes").appendChild(b);
+}
+setTheme(ls.get("theme")||(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"));
+
+/* настройки */
+$("key").value=ls.get("gkey")||"";
+const saveKey=()=>{
+  const v=$("key").value.trim(); ls.set("gkey",v);
+  $("ks").textContent=v?"Ключ сохранён на этом устройстве":"";
+};
+$("key").oninput=saveKey; $("key").onchange=saveKey;
+if($("key").value)$("ks").textContent="Ключ сохранён на этом устройстве";
+else $("settings").hidden=false;
+$("cog").onclick=()=>{$("settings").hidden=!$("settings").hidden};
+$("aiSw").setAttribute("aria-checked",useAI);
+$("aiSw").onclick=()=>{useAI=!useAI;$("aiSw").setAttribute("aria-checked",useAI);ls.set("ai",useAI?"1":"0")};
+$("txt").oninput=e=>{e.target.style.height="auto";e.target.style.height=Math.min(e.target.scrollHeight,160)+"px"};
+
+/* API */
+function fetchT(url,opts,ms,label){
+  return Promise.race([
+    fetch(url,opts),
+    new Promise((_,rej)=>setTimeout(()=>rej(new Error("нет ответа "+ms/1000+" с"+(label?" ("+label+")":""))),ms))
+  ]);
+}
+async function call(model,body,key){
+  const r=await fetchT(API+model+":generateContent",{
+    method:"POST",
+    headers:{"Content-Type":"application/json","x-goog-api-key":key},
+    body:JSON.stringify(body)},25000,model);
+  if(!r.ok){
+    let m="";try{m=(await r.json()).error.message}catch(e){}
+    throw new Error("HTTP "+r.status+" "+m.slice(0,150));
+  }
+  return await r.json();
+}
+async function askFree(){
+  const messages=[{role:"system",content:SYSTEM},...hist.map(h=>({role:h.role==="model"?"assistant":"user",content:h.parts[0].text}))];
+  const r=await fetchT("https://gen.pollinations.ai/v1/chat/completions",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({model:"openai",messages})},25000,"Pollinations");
+  if(!r.ok)throw new Error("HTTP "+r.status);
+  const j=await r.json();
+  return j.choices[0].message.content.trim();
+}
+async function ask(text,key){
+  hist.push({role:"user",parts:[{text}]});
+  try{
+    let a;
+    if(key){
+      const j=await call(TEXT_MODEL,{systemInstruction:{parts:[{text:SYSTEM}]},contents:hist},key);
+      a=j.candidates[0].content.parts.map(p=>p.text||"").join("").trim();
+    }else a=await askFree();
+    if(!a)throw new Error("пустой ответ");
+    hist.push({role:"model",parts:[{text:a}]});
+    if(hist.length>12)hist=hist.slice(-12);
+    return a;
+  }catch(e){hist.pop();throw e;}
+}
+
+/* звук */
+function play(b64){
+  const bin=atob(b64), n=bin.length>>1;
+  const buf=ctx.createBuffer(1,n,24000), ch=buf.getChannelData(0);
+  for(let i=0;i<n;i++){
+    let v=bin.charCodeAt(2*i)|(bin.charCodeAt(2*i+1)<<8);
+    if(v>=32768)v-=65536; ch[i]=v/32768;
+  }
+  stopAudio();
+  cur=ctx.createBufferSource(); cur.buffer=buf;
+  cur.connect(ctx.destination); cur.start();
+}
+function stopAudio(){
+  if(cur){try{cur.stop()}catch(e){} cur=null;}
+  try{speechSynthesis.cancel()}catch(e){}
+}
+function fallback(text){
+  stopAudio();
+  const u=new SpeechSynthesisUtterance(text); u.lang="ru-RU";
+  speechSynthesis.speak(u);
+}
+async function say(text,key){
+  if(cache.has(text)){play(cache.get(text));return;}
+  if(!key||!navigator.onLine){fallback(text);return;}
+  try{
+    const j=await call(TTS_MODEL,{
+      contents:[{parts:[{text}]}],
+      generationConfig:{responseModalities:["AUDIO"],
+        speechConfig:{voiceConfig:{prebuiltVoiceConfig:{voiceName:VOICE}}}}
+    },key);
+    const b64=j.candidates[0].content.parts[0].inlineData.data;
+    cache.set(text,b64); play(b64);
+  }catch(e){
+    $("st").textContent="Голос Gemini недоступен ("+e.message+"). Читаю голосом браузера";
+    fallback(text);
+  }
+}
+
+/* основной сценарий */
+async function go(){
+  const text=$("txt").value.trim(), key=$("key").value.trim();
+  if(!text||$("go").disabled)return;
+  $("go").disabled=true;
+  ctx=ctx||new (window.AudioContext||window.webkitAudioContext)();
+  await ctx.resume();
+  $("st").textContent=useAI?"Думаю…":"Озвучиваю…"; $("ans").textContent="";
+  let out=text, note="";
+  if(useAI){
+    if(!navigator.onLine){
+      note="Нет сети: читаю ваш текст голосом телефона";
+    }else{
+      try{
+        out=await ask(text,key);
+      }catch(e){
+        if(e instanceof TypeError||e.message.startsWith("нет ответа")){
+          note="Сеть недоступна: читаю ваш текст голосом телефона";
+        }else{
+          $("st").textContent="Ошибка: "+e.message;
+          $("go").disabled=false; return;
+        }
+      }
+    }
+  }
+  $("ans").textContent=out; $("st").textContent=note;
+  $("txt").value=""; $("txt").style.height="auto";
+  await say(out,key);
+  $("go").disabled=false;
+}
+if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
+$("go").onclick=go;
+$("stop").onclick=stopAudio;
+$("txt").addEventListener("keydown",e=>{
+  if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();go();}
+});
+</script></body></html>
